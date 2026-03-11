@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barnatos Hairdressers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose:     #C4877A;
+    --rose-lt:  #D9A89E;
+    --rose-pale:#F5E8E4;
+    --blush:    #FAF2EF;
+    --sand:     #E8DACE;
+    --champagne:#D4B896;
+    --deep:     #2C1F1A;
+    --mid:      #6B4F45;
+    --muted:    #A8907F;
+    --white:    #FDFAF8;
+    --cream:    #F7F2ED;
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--white); color:var(--deep); font-family:'Jost',sans-serif; font-weight:300; overflow-x:hidden; }
+
+  /* ── PASSWORD MODAL ── */
+  #pw-overlay {
+    display:none; position:fixed; inset:0; z-index:99999;
+    background:rgba(44,31,26,0.55); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center;
+  }
+  #pw-overlay.show { display:flex; }
+  #pw-box {
+    background:var(--white); border:1px solid var(--sand);
+    padding:48px 40px; width:360px; text-align:center;
+    position:relative;
+    box-shadow:0 20px 60px rgba(44,31,26,0.2);
+  }
+  #pw-box::before {
+    content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:60px; height:3px; background:var(--rose);
+  }
+  #pw-box h3 {
+    font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:300;
+    color:var(--deep); margin-bottom:6px;
+  }
+  #pw-box p { font-size:12px; letter-spacing:1px; color:var(--muted); margin-bottom:28px; }
+  #pw-input {
+    width:100%; border:1px solid var(--sand); background:var(--cream);
+    padding:13px 16px; font-family:'Jost',sans-serif; font-size:14px;
+    color:var(--deep); outline:none; text-align:center; letter-spacing:2px;
+    transition:border-color .3s; margin-bottom:14px;
+  }
+  #pw-input:focus { border-color:var(--rose); }
+  #pw-submit {
+    width:100%; padding:14px; background:var(--rose); border:none; color:#fff;
+    font-family:'Jost',sans-serif; font-size:11px; letter-spacing:3px;
+    text-transform:uppercase; cursor:pointer; transition:background .3s;
+  }
+  #pw-submit:hover { background:var(--rose-lt); }
+  #pw-error {
+    display:none; color:var(--rose); font-size:12px;
+    letter-spacing:1px; margin-top:10px;
+  }
+  #pw-cancel {
+    display:block; margin-top:14px; font-size:11px; letter-spacing:2px;
+    color:var(--muted); cursor:pointer; text-transform:uppercase;
+    background:none; border:none; font-family:'Jost',sans-serif;
+    transition:color .3s; width:100%;
+  }
+  #pw-cancel:hover { color:var(--deep); }
+
+  /* ── EDIT BANNER ── */
+  #edit-banner {
+    position:fixed; top:0; left:0; right:0; z-index:9999;
+    background:var(--rose); color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    padding:10px 20px; font-size:12px; letter-spacing:2px; font-weight:400;
+    transform:translateY(-100%); transition:transform .35s ease;
+  }
+  #edit-banner.visible { transform:translateY(0); }
+  #edit-banner button {
+    background:#fff; color:var(--rose); border:none;
+    padding:5px 18px; font-family:'Jost',sans-serif;
+    font-size:11px; letter-spacing:2px; cursor:pointer; font-weight:500;
+  }
+
+  [contenteditable="true"] {
+    outline:1px dashed rgba(196,135,122,0.5); outline-offset:3px;
+    cursor:text; transition:outline .2s, background .2s;
+  }
+  [contenteditable="true"]:hover { outline-color:var(--rose); }
+  [contenteditable="true"]:focus { outline:1.5px solid var(--rose); background:rgba(196,135,122,0.04); }
+
+  /* ── NAV ── */
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:1000;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:28px 64px; transition:padding .4s, background .4s, border-color .4s;
+  }
+  nav.scrolled {
+    padding:16px 64px; background:rgba(253,250,248,0.96);
+    border-bottom:1px solid var(--sand); backdrop-filter:blur(8px);
+  }
+  .nav-logo { display:flex; flex-direction:column; line-height:1; text-decoration:none; }
+  .nav-logo-main { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; letter-spacing:5px; color:var(--deep); text-transform:uppercase; }
+  .nav-logo-sub { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:var(--rose); font-weight:400; margin-top:2px; }
+  .nav-links { display:flex; gap:40px; list-style:none; align-items:center; }
+  .nav-links a { font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:var(--mid); text-decoration:none; font-weight:400; position:relative; padding-bottom:3px; transition:color .3s; }
+  .nav-links a::after { content:''; position:absolute; bottom:0; left:0; width:0; height:1px; background:var(--rose); transition:width .35s; }
+  .nav-links a:hover { color:var(--rose); }
+  .nav-links a:hover::after { width:100%; }
+  .nav-cta { background:var(--rose) !important; color:#fff !important; padding:11px 28px !important; letter-spacing:2px !important; }
+  .nav-cta::after { display:none !important; }
+  .nav-cta:hover { background:var(--rose-lt) !important; }
+
+  /* ── HERO ── */
+  #hero { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; position:relative; overflow:hidden; }
+  .hero-left {
+    background:var(--blush); display:flex; flex-direction:column; justify-content:center;
+    padding:140px 80px 80px; position:relative;
+  }
+  .hero-left::before {
+    content:''; position:absolute; top:0; left:0; bottom:0; right:0;
+    background: radial-gradient(ellipse at 0% 100%, rgba(196,135,122,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 100% 0%, rgba(212,184,150,0.1) 0%, transparent 50%);
+    pointer-events:none;
+  }
+  .hero-right { background:var(--sand); position:relative; overflow:hidden; }
+  .hero-right-inner {
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse at 60% 40%, rgba(196,135,122,0.2) 0%, transparent 60%),
+                linear-gradient(160deg, var(--sand) 0%, var(--rose-pale) 100%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-photo-placeholder {
+    width:72%; aspect-ratio:3/4; border:1px solid rgba(196,135,122,0.3);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; color:var(--muted); font-size:11px; letter-spacing:3px;
+    position:relative; background:rgba(253,250,248,0.4);
+  }
+  .hero-photo-placeholder::before, .hero-photo-placeholder::after { content:''; position:absolute; width:60px; height:60px; }
+  .hero-photo-placeholder::before { top:-8px; left:-8px; border-top:2px solid var(--rose); border-left:2px solid var(--rose); }
+  .hero-photo-placeholder::after  { bottom:-8px; right:-8px; border-bottom:2px solid var(--rose); border-right:2px solid var(--rose); }
+  .hero-eyebrow { font-size:10px; letter-spacing:5px; text-transform:uppercase; color:var(--rose); margin-bottom:24px; font-weight:400; }
+  .hero-title { font-family:'Cormorant Garamond',serif; font-size:clamp(52px,6vw,86px); font-weight:300; line-height:1.1; color:var(--deep); margin-bottom:10px; }
+  .hero-title em { font-style:italic; color:var(--rose); display:block; font-weight:300; }
+  .hero-sub { font-size:12px; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-bottom:36px; font-weight:400; }
+  .hero-desc { font-size:15px; color:var(--mid); line-height:1.9; margin-bottom:48px; max-width:380px; font-weight:300; }
+  .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
+  .btn-rose { background:var(--rose); color:#fff; padding:15px 40px; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; font-weight:400; text-decoration:none; border:none; cursor:pointer; transition:background .3s, transform .2s; display:inline-block; }
+  .btn-rose:hover { background:var(--rose-lt); transform:translateY(-2px); }
+  .btn-ghost { background:transparent; color:var(--deep); padding:15px 40px; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; font-weight:400; text-decoration:none; border:1px solid var(--sand); cursor:pointer; transition:border-color .3s, color .3s, transform .2s; display:inline-block; }
+  .btn-ghost:hover { border-color:var(--rose); color:var(--rose); transform:translateY(-2px); }
+  .hero-scroll { position:absolute; bottom:40px; left:80px; display:flex; align-items:center; gap:14px; font-size:9px; letter-spacing:4px; color:var(--muted); text-transform:uppercase; }
+  .hero-scroll::before { content:''; width:40px; height:1px; background:var(--rose); opacity:.5; animation:grow 2s ease infinite; }
+  @keyframes grow { 0%,100%{width:40px} 50%{width:60px} }
+
+  /* ── SECTIONS ── */
+  section { padding:110px 80px; }
+  .section-tag { font-size:9px; letter-spacing:5px; text-transform:uppercase; color:var(--rose); font-weight:400; margin-bottom:18px; display:flex; align-items:center; gap:14px; }
+  .section-tag::after { content:''; flex:1; max-width:60px; height:1px; background:var(--rose); opacity:.5; }
+  h2 { font-family:'Cormorant Garamond',serif; font-size:clamp(38px,4.5vw,64px); font-weight:300; line-height:1.15; color:var(--deep); }
+  h2 em { font-style:italic; color:var(--rose); }
+
+  /* ── ABOUT ── */
+  #about { background:var(--cream); }
+  .about-wrap { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1fr 1.1fr; gap:100px; align-items:center; }
+  .about-img-area { position:relative; }
+  .about-img-main { width:100%; aspect-ratio:4/5; background:var(--sand); border:1px solid rgba(196,135,122,0.2); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--muted); font-size:11px; letter-spacing:2px; overflow:hidden; position:relative; }
+  .about-img-main::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(196,135,122,.05) 0%,transparent 100%); }
+  .about-float-card { position:absolute; bottom:-28px; right:-32px; background:var(--white); border:1px solid var(--sand); padding:24px 28px; text-align:center; min-width:140px; box-shadow:0 8px 40px rgba(44,31,26,.08); }
+  .float-num { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:var(--rose); line-height:1; }
+  .float-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .about-content { padding-left:20px; }
+  .about-text { font-size:15px; color:var(--mid); line-height:1.95; margin-top:24px; }
+  .about-pillars { display:flex; flex-direction:column; gap:0; margin-top:40px; border-top:1px solid var(--sand); }
+  .pillar { display:flex; align-items:center; gap:20px; padding:18px 0; border-bottom:1px solid var(--sand); }
+  .pillar-icon { font-size:20px; width:44px; height:44px; background:var(--rose-pale); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .pillar-text { font-size:13px; color:var(--mid); line-height:1.5; }
+  .pillar-title { font-weight:500; color:var(--deep); letter-spacing:1px; font-size:12px; text-transform:uppercase; margin-bottom:2px; }
+
+  /* ── SERVICES ── */
+  #services { background:var(--white); }
+  .services-wrap { max-width:1200px; margin:0 auto; }
+  .services-top { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:64px; gap:40px; }
+  .services-intro { font-size:15px; color:var(--muted); line-height:1.8; max-width:380px; }
+  .services-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+  .svc-card { background:var(--cream); padding:44px 36px; position:relative; overflow:hidden; transition:background .3s,transform .3s; border:1px solid transparent; }
+  .svc-card::after { content:''; position:absolute; bottom:0; left:36px; right:36px; height:1px; background:var(--rose); transform:scaleX(0); transform-origin:left; transition:transform .4s ease; }
+  .svc-card:hover { background:var(--blush); border-color:rgba(196,135,122,.15); transform:translateY(-3px); }
+  .svc-card:hover::after { transform:scaleX(1); }
+  .svc-number { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:var(--sand); line-height:1; margin-bottom:20px; letter-spacing:2px; }
+  .svc-name { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; color:var(--deep); margin-bottom:12px; }
+  .svc-desc { font-size:13px; color:var(--muted); line-height:1.8; margin-bottom:28px; }
+  .svc-footer { display:flex; align-items:center; justify-content:space-between; }
+  .svc-price { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--rose); }
+  .svc-dur { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+
+  /* ── TEAM ── */
+  #team { background:var(--blush); }
+  .team-wrap { max-width:1200px; margin:0 auto; }
+  .team-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:64px; }
+  .team-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:32px; }
+  .stylist-card { text-align:center; }
+  .stylist-photo { width:100%; aspect-ratio:3/4; background:var(--sand); margin-bottom:24px; position:relative; overflow:hidden; border:1px solid rgba(196,135,122,.15); display:flex; align-items:center; justify-content:center; font-size:56px; color:var(--muted); transition:border-color .3s; }
+  .stylist-card:hover .stylist-photo { border-color:var(--rose); }
+  .stylist-photo-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(196,135,122,.15),transparent); }
+  .stylist-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--deep); margin-bottom:4px; }
+  .stylist-role { font-size:10px; letter-spacing:3px; color:var(--rose); text-transform:uppercase; }
+  .stylist-bio { font-size:12px; color:var(--muted); margin-top:10px; line-height:1.7; }
+
+  /* ── INFO ── */
+  #info { background:var(--deep); color:var(--cream); }
+  .info-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:80px; }
+  .info-block-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; color:var(--rose-pale); margin-bottom:28px; padding-bottom:16px; border-bottom:1px solid rgba(196,135,122,.25); letter-spacing:2px; }
+  #info .section-tag { color:var(--rose-lt); }
+  #info .section-tag::after { background:var(--rose-lt); }
+  #info h2 em { color:var(--rose-lt); }
+  #info h2 { color:var(--rose-pale); }
+  .hours-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px; }
+  .hours-row .day-name { color:#c8b8b0; letter-spacing:1px; font-weight:400; }
+  .hours-row .hrs { color:var(--rose-lt); font-weight:300; }
+  .hrs.closed { color:rgba(168,144,127,.5) !important; font-style:italic; }
+  .contact-row { display:flex; gap:16px; margin-bottom:22px; align-items:flex-start; font-size:14px; color:#c8b8b0; line-height:1.6; }
+  .ci { color:var(--rose-lt); flex-shrink:0; font-size:16px; margin-top:1px; }
+  .map-box { width:100%; aspect-ratio:1; background:rgba(255,255,255,.04); border:1px solid rgba(196,135,122,.2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:rgba(168,144,127,.6); font-size:11px; letter-spacing:2px; position:relative; overflow:hidden; }
+  .map-box::before { content:''; position:absolute; inset:0; background: repeating-linear-gradient(0deg,transparent,transparent 32px,rgba(196,135,122,.04) 32px,rgba(196,135,122,.04) 33px), repeating-linear-gradient(90deg,transparent,transparent 32px,rgba(196,135,122,.04) 32px,rgba(196,135,122,.04) 33px); }
+
+  /* ── GALLERY ── */
+  .gallery-marquee { overflow:hidden; background:var(--cream); padding:0; }
+  .gal-track { display:flex; animation:marquee 20s linear infinite; width:max-content; }
+  .gal-track:hover { animation-play-state:paused; }
+  .gal-item { width:220px; height:160px; flex-shrink:0; margin-right:2px; background:var(--sand); display:flex; align-items:center; justify-content:center; font-size:36px; border:1px solid rgba(196,135,122,.06); position:relative; transition:border-color .3s; }
+  .gal-item:hover { border-color:rgba(196,135,122,.3); }
+  .gal-item::after { content:'GALLERY 0'attr(data-n); position:absolute; bottom:6px; right:10px; font-size:8px; letter-spacing:2px; color:rgba(196,135,122,.4); }
+  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* ── REVIEWS ── */
+  #reviews { background:var(--rose-pale); }
+  .reviews-wrap { max-width:1000px; margin:0 auto; }
+  .reviews-header { text-align:center; margin-bottom:64px; }
+  .reviews-header .section-tag { justify-content:center; }
+  .reviews-header .section-tag::after { display:none; }
+  .reviews-header .section-tag::before { content:''; flex:1; max-width:60px; height:1px; background:var(--rose); opacity:.5; }
+  .reviews-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  .review-card { background:var(--white); padding:36px 30px; border:1px solid rgba(196,135,122,.12); position:relative; }
+  .review-card::before { content:'\201C'; font-family:'Cormorant Garamond',serif; font-size:80px; line-height:1; color:var(--rose); opacity:.2; position:absolute; top:10px; left:24px; }
+  .review-stars { color:var(--rose); font-size:14px; margin-bottom:16px; letter-spacing:3px; }
+  .review-text { font-size:14px; color:var(--mid); line-height:1.8; margin-bottom:20px; font-style:italic; }
+  .review-author { font-size:11px; letter-spacing:2px; color:var(--rose); text-transform:uppercase; font-weight:500; }
+
+  /* ── APPOINTMENT ── */
+  #appointment { background:var(--white); }
+  .appt-wrap { max-width:900px; margin:0 auto; }
+  .appt-top { text-align:center; margin-bottom:60px; }
+  .appt-top p { font-size:15px; color:var(--muted); line-height:1.8; max-width:520px; margin:18px auto 0; }
+  .appt-card { background:var(--cream); border:1px solid var(--sand); padding:60px; position:relative; }
+  .appt-card::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:60px; height:3px; background:var(--rose); }
+  .appt-ribbon { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--cream); color:var(--rose); padding:4px 24px; font-size:10px; letter-spacing:4px; text-transform:uppercase; font-weight:500; border:1px solid var(--sand); white-space:nowrap; }
+  .f-row { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+  .f-group { display:flex; flex-direction:column; gap:8px; }
+  .f-group.span2 { grid-column:1/-1; }
+  .f-group label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--rose); font-weight:500; }
+  .f-group input, .f-group select, .f-group textarea { background:var(--white); border:1px solid var(--sand); color:var(--deep); padding:14px 18px; font-family:'Jost',sans-serif; font-size:14px; font-weight:300; outline:none; transition:border-color .3s, background .3s; -webkit-appearance:none; border-radius:0; }
+  .f-group select option { background:var(--white); }
+  .f-group input:focus, .f-group select:focus, .f-group textarea:focus { border-color:var(--rose); background:var(--rose-pale); }
+  .f-group input::placeholder, .f-group textarea::placeholder { color:rgba(107,79,69,.35); }
+  .f-group textarea { min-height:110px; resize:vertical; }
+  .f-submit { width:100%; margin-top:8px; padding:18px; background:var(--rose); border:none; color:#fff; font-family:'Jost',sans-serif; font-size:12px; letter-spacing:4px; text-transform:uppercase; font-weight:400; cursor:pointer; transition:background .3s, transform .2s; }
+  .f-submit:hover { background:var(--rose-lt); transform:translateY(-2px); }
+  #appt-success { display:none; text-align:center; padding:80px 40px; background:var(--cream); border:1px solid var(--sand); }
+  .success-icon { font-size:52px; margin-bottom:20px; }
+  #appt-success h3 { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:300; color:var(--deep); margin-bottom:16px; }
+  #appt-success p { font-size:15px; color:var(--muted); line-height:1.8; max-width:480px; margin:0 auto 32px; }
+
+  /* ── FOOTER ── */
+  footer { background:var(--deep); color:rgba(200,184,176,.7); padding:60px 80px; border-top:1px solid rgba(196,135,122,.15); }
+  .footer-inner { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:60px; }
+  .footer-brand-name { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:300; letter-spacing:5px; color:var(--rose-pale); text-transform:uppercase; margin-bottom:6px; }
+  .footer-brand-tag { font-size:10px; letter-spacing:4px; color:var(--rose-lt); margin-bottom:20px; text-transform:uppercase; }
+  .footer-brand-desc { font-size:13px; line-height:1.8; color:rgba(200,184,176,.6); }
+  .footer-col h4 { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--rose-lt); margin-bottom:20px; font-weight:400; }
+  .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .footer-col ul li a { font-size:13px; color:rgba(200,184,176,.6); text-decoration:none; transition:color .3s; letter-spacing:.5px; }
+  .footer-col ul li a:hover { color:var(--rose-lt); }
+  .footer-bottom { max-width:1200px; margin:48px auto 0; padding-top:24px; border-top:1px solid rgba(196,135,122,.12); display:flex; justify-content:space-between; align-items:center; font-size:11px; letter-spacing:1px; color:rgba(168,144,127,.4); }
+
+  /* ── EDIT FAB ── */
+  #edit-fab { position:fixed; bottom:28px; right:28px; z-index:9998; background:var(--rose); color:#fff; border:none; width:56px; height:56px; border-radius:50%; font-size:20px; cursor:pointer; box-shadow:0 6px 28px rgba(196,135,122,.45); display:flex; align-items:center; justify-content:center; transition:transform .2s, background .2s; }
+  #edit-fab:hover { transform:scale(1.1); background:var(--rose-lt); }
+  #edit-fab.active { background:#4CAF50; box-shadow:0 6px 28px rgba(76,175,80,.35); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:1024px) { #hero{grid-template-columns:1fr} .hero-right{display:none} .hero-left{padding:140px 40px 80px;min-height:100vh} .team-grid{grid-template-columns:repeat(2,1fr)} .footer-inner{grid-template-columns:1fr 1fr;gap:40px} }
+  @media(max-width:900px) { nav{padding:18px 24px} nav.scrolled{padding:14px 24px} .nav-links{display:none} section{padding:70px 24px} .about-wrap,.info-grid{grid-template-columns:1fr;gap:48px} .services-grid{grid-template-columns:1fr} .services-top{flex-direction:column;align-items:flex-start} .reviews-grid{grid-template-columns:1fr} .f-row{grid-template-columns:1fr} .appt-card{padding:40px 24px} footer{padding:48px 24px} .footer-bottom{flex-direction:column;gap:8px;text-align:center} }
+  @media(max-width:600px) { .team-grid{grid-template-columns:1fr} .hero-btns{flex-direction:column} .footer-inner{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD MODAL -->
+<div id="pw-overlay">
+  <div id="pw-box">
+    <h3>Editor Access</h3>
+    <p>ENTER YOUR PASSWORD TO EDIT</p>
+    <input type="password" id="pw-input" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button id="pw-submit" onclick="checkPw()">UNLOCK EDITING</button>
+    <div id="pw-error">Incorrect password. Please try again.</div>
+    <button id="pw-cancel" onclick="closePwModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- EDIT BANNER -->
+<div id="edit-banner">
+  ✏️ &nbsp;EDIT MODE — Click any highlighted text to edit it directly
+  <button onclick="exitEdit()">✓ Done Editing</button>
+</div>
+
+<!-- FLOATING EDIT BUTTON -->
+<button id="edit-fab" onclick="openPwModal()" title="Edit Website">✏️</button>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">
+    <span class="nav-logo-main">Barnatos</span>
+    <span class="nav-logo-sub">Hairdressers</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#team">Stylists</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#info">Contact</a></li>
+    <li><a href="#appointment" class="nav-cta">Book Now</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Est. 2005 · Luxury Hair Studio</div>
+    <h1 class="hero-title">The Art of<br><em>Beautiful Hair</em></h1>
+    <div class="hero-sub">Barnatos Hairdressers</div>
+    <p class="hero-desc" contenteditable="false">Where precision meets passion. At Barnatos, we craft personalised looks that celebrate your individuality — from elegant colour to transformative cuts.</p>
+    <div class="hero-btns">
+      <a href="#appointment" class="btn-rose">Book an Appointment</a>
+      <a href="#services" class="btn-ghost">Explore Services</a>
+    </div>
+    <div class="hero-scroll">Scroll to discover</div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-right-inner">
+      <div class="hero-photo-placeholder">
+        <span style="font-size:64px;opacity:.3">💇‍♀️</span>
+        <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase">Salon Photo Here</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-wrap">
+    <div class="about-img-area">
+      <div class="about-img-main">
+        <span style="font-size:72px;opacity:.25;z-index:1">✂️</span>
+        <span style="font-size:10px;letter-spacing:3px;z-index:1">ADD INTERIOR PHOTO</span>
+      </div>
+      <div class="about-float-card">
+        <div class="float-num" contenteditable="false">20+</div>
+        <div class="float-label">Years of Excellence</div>
+      </div>
+    </div>
+    <div class="about-content">
+      <div class="section-tag">Our Story</div>
+      <h2>More Than a Salon —<br><em>A Sanctuary</em></h2>
+      <p class="about-text" contenteditable="false">Founded in 2005, <strong>Barnatos Hairdressers</strong> has been a beloved destination for those who believe their hair is their finest accessory. Our team of passionate stylists combines technical mastery with creative vision to deliver looks that are as unique as you are.<br><br>From your first consultation to the final reveal, every visit to Barnatos is designed to be an experience — relaxing, inspiring, and utterly transformative.</p>
+      <div class="about-pillars">
+        <div class="pillar"><div class="pillar-icon">🌿</div><div class="pillar-text"><div class="pillar-title">Sustainable Products</div>We use only premium, eco-conscious brands.</div></div>
+        <div class="pillar"><div class="pillar-icon">🎓</div><div class="pillar-text"><div class="pillar-title">Continuously Trained</div>Our stylists train seasonally with industry leaders.</div></div>
+        <div class="pillar"><div class="pillar-icon">💛</div><div class="pillar-text"><div class="pillar-title">Personal Consultations</div>Every appointment begins with a thorough consultation.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="services-wrap">
+    <div class="services-top">
+      <div><div class="section-tag">What We Do</div><h2>Our <em>Services</em></h2></div>
+      <p class="services-intro" contenteditable="false">From a simple trim to a full colour transformation — every service at Barnatos is delivered with care, precision, and artistry.</p>
+    </div>
+    <div class="services-grid">
+      <div class="svc-card"><div class="svc-number">01</div><div class="svc-name" contenteditable="false">Cut & Style</div><div class="svc-desc" contenteditable="false">A precision cut tailored to your face shape and lifestyle, finished with a professional blow-dry and style that lasts.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £45</div><div class="svc-dur" contenteditable="false">60 min</div></div></div>
+      <div class="svc-card"><div class="svc-number">02</div><div class="svc-name" contenteditable="false">Colour & Highlights</div><div class="svc-desc" contenteditable="false">Full colour, balayage, highlights, or glossing — our colourists create dimension and vibrancy that complements your skin tone.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £85</div><div class="svc-dur" contenteditable="false">90 min</div></div></div>
+      <div class="svc-card"><div class="svc-number">03</div><div class="svc-name" contenteditable="false">Balayage & Ombré</div><div class="svc-desc" contenteditable="false">Hand-painted, sun-kissed colour blends for a natural, effortless gradient. Low maintenance and utterly beautiful.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £110</div><div class="svc-dur" contenteditable="false">2 hrs</div></div></div>
+      <div class="svc-card"><div class="svc-number">04</div><div class="svc-name" contenteditable="false">Blow-Dry & Finish</div><div class="svc-desc" contenteditable="false">A luxurious wash, deep condition, and professional blow-dry. Perfect for a special occasion or simply treating yourself.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £30</div><div class="svc-dur" contenteditable="false">45 min</div></div></div>
+      <div class="svc-card"><div class="svc-number">05</div><div class="svc-name" contenteditable="false">Keratin Treatment</div><div class="svc-desc" contenteditable="false">Banish frizz and restore silky smoothness. Our keratin treatments leave hair manageable, glossy, and transformed for months.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £120</div><div class="svc-dur" contenteditable="false">2.5 hrs</div></div></div>
+      <div class="svc-card"><div class="svc-number">06</div><div class="svc-name" contenteditable="false">Bridal & Occasion</div><div class="svc-desc" contenteditable="false">Bespoke styling for your most memorable moments — from intricate bridal updos to elegant event looks. Consultations included.</div><div class="svc-footer"><div class="svc-price" contenteditable="false">from £75</div><div class="svc-dur" contenteditable="false">varies</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="team-wrap">
+    <div class="team-header"><div><div class="section-tag">The Experts</div><h2>Meet Our <em>Stylists</em></h2></div></div>
+    <div class="team-grid">
+      <div class="stylist-card"><div class="stylist-photo">💇‍♀️<div class="stylist-photo-overlay"></div></div><div class="stylist-name" contenteditable="false">Sophia Barnato</div><div class="stylist-role">Creative Director & Founder</div><div class="stylist-bio" contenteditable="false">20+ years of artistry. Sophia's visionary approach to colour and cut has defined Barnatos' signature aesthetic from day one.</div></div>
+      <div class="stylist-card"><div class="stylist-photo">✂️<div class="stylist-photo-overlay"></div></div><div class="stylist-name" contenteditable="false">Isabella Crane</div><div class="stylist-role">Senior Colourist</div><div class="stylist-bio" contenteditable="false">A master of balayage and creative colour. Isabella trained in Paris and brings continental flair to every appointment.</div></div>
+      <div class="stylist-card"><div class="stylist-photo">🌿<div class="stylist-photo-overlay"></div></div><div class="stylist-name" contenteditable="false">Marcus Lee</div><div class="stylist-role">Senior Stylist</div><div class="stylist-bio" contenteditable="false">Known for his precision cuts and effortless styling. Marcus specialises in textured, lived-in looks for modern clients.</div></div>
+      <div class="stylist-card"><div class="stylist-photo">💛<div class="stylist-photo-overlay"></div></div><div class="stylist-name" contenteditable="false">Amara Osei</div><div class="stylist-role">Stylist & Bridal Specialist</div><div class="stylist-bio" contenteditable="false">Amara's gentle touch and meticulous eye make her the go-to for bridal parties, occasions, and transformative blowouts.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<div class="gallery-marquee">
+  <div class="gal-track">
+    <div class="gal-item" data-n="1">💇‍♀️</div><div class="gal-item" data-n="2">✂️</div><div class="gal-item" data-n="3">🌸</div><div class="gal-item" data-n="4">💄</div><div class="gal-item" data-n="5">💇‍♀️</div><div class="gal-item" data-n="6">🌿</div><div class="gal-item" data-n="7">✨</div><div class="gal-item" data-n="8">💅</div>
+    <div class="gal-item" data-n="1">💇‍♀️</div><div class="gal-item" data-n="2">✂️</div><div class="gal-item" data-n="3">🌸</div><div class="gal-item" data-n="4">💄</div><div class="gal-item" data-n="5">💇‍♀️</div><div class="gal-item" data-n="6">🌿</div><div class="gal-item" data-n="7">✨</div><div class="gal-item" data-n="8">💅</div>
+  </div>
+</div>
+
+<!-- REVIEWS -->
+<section id="reviews">
+  <div class="reviews-wrap">
+    <div class="reviews-header"><div class="section-tag">Client Love</div><h2>What Our Clients <em>Say</em></h2></div>
+    <div class="reviews-grid">
+      <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text" contenteditable="false">"I've been coming to Barnatos for 8 years and I wouldn't trust anyone else with my hair. Sophia just knows exactly what I need — sometimes before I do!"</p><div class="review-author">— Sarah M.</div></div>
+      <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text" contenteditable="false">"Isabella did my balayage and I have never received so many compliments. The salon itself is beautiful and the whole experience felt so indulgent."</p><div class="review-author">— Chloe T.</div></div>
+      <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text" contenteditable="false">"Amara styled my hair for my wedding day and it was absolutely perfect. She was so calm and professional, and my hair stayed flawless all evening."</p><div class="review-author">— Rebecca K.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOURS / CONTACT / LOCATION -->
+<section id="info">
+  <div class="info-grid">
+    <div>
+      <div class="section-tag">Visit Us</div>
+      <h2>Hours &amp; <em>Location</em></h2><br>
+      <div class="hours-row"><span class="day-name">Monday</span><span class="hrs" contenteditable="false">9:00 AM – 6:00 PM</span></div>
+      <div class="hours-row"><span class="day-name">Tuesday</span><span class="hrs" contenteditable="false">9:00 AM – 7:00 PM</span></div>
+      <div class="hours-row"><span class="day-name">Wednesday</span><span class="hrs" contenteditable="false">9:00 AM – 7:00 PM</span></div>
+      <div class="hours-row"><span class="day-name">Thursday</span><span class="hrs" contenteditable="false">9:00 AM – 8:00 PM</span></div>
+      <div class="hours-row"><span class="day-name">Friday</span><span class="hrs" contenteditable="false">9:00 AM – 7:00 PM</span></div>
+      <div class="hours-row"><span class="day-name">Saturday</span><span class="hrs" contenteditable="false">8:30 AM – 5:30 PM</span></div>
+      <div class="hours-row"><span class="day-name">Sunday</span><span class="hrs closed">Closed</span></div>
+    </div>
+    <div>
+      <div class="info-block-title">Get in Touch</div>
+      <div class="contact-row"><div class="ci">📍</div><div contenteditable="false">14 Blossom Lane<br>London, W1T 4HQ</div></div>
+      <div class="contact-row"><div class="ci">📞</div><div contenteditable="false">+44 (0)20 7123 4567</div></div>
+      <div class="contact-row"><div class="ci">✉️</div><div contenteditable="false">hello@barnatos.co.uk</div></div>
+      <div class="contact-row"><div class="ci">📱</div><div contenteditable="false">@barnatos_hair</div></div>
+      <div class="contact-row"><div class="ci">🌐</div><div contenteditable="false">www.barnatos.co.uk</div></div>
+    </div>
+    <div>
+      <div class="info-block-title">Find Us</div>
+      <div class="map-box">
+        <span style="font-size:40px;z-index:1">📍</span>
+        <span style="z-index:1;letter-spacing:2px;font-size:11px">14 BLOSSOM LANE, LONDON</span>
+        <span style="font-size:9px;z-index:1;opacity:.4;letter-spacing:1px">PASTE GOOGLE MAP EMBED HERE</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPOINTMENT -->
+<section id="appointment">
+  <div class="appt-wrap">
+    <div class="appt-top">
+      <div class="section-tag" style="justify-content:center">Reserve Your Visit</div>
+      <h2>Book an <em>Appointment</em></h2>
+      <p>Fill in the form below and we'll confirm your appointment within 24 hours. We look forward to welcoming you to Barnatos.</p>
+    </div>
+    <div id="appt-form-wrap">
+      <div class="appt-card">
+        <div class="appt-ribbon">— Request an Appointment —</div>
+        <div class="f-row">
+          <div class="f-group"><label>First Name *</label><input type="text" id="fname" placeholder="Your first name"></div>
+          <div class="f-group"><label>Last Name *</label><input type="text" id="lname" placeholder="Your last name"></div>
+        </div>
+        <div class="f-row">
+          <div class="f-group"><label>Phone Number</label><input type="tel" id="phone" placeholder="+44 7700 000000"></div>
+          <div class="f-group"><label>Email Address</label><input type="email" id="email" placeholder="you@example.com"></div>
+        </div>
+        <div class="f-row">
+          <div class="f-group"><label>Choose a Stylist *</label>
+            <select id="stylist">
+              <option value="">— Any Available —</option>
+              <option>Sophia Barnato</option><option>Isabella Crane</option>
+              <option>Marcus Lee</option><option>Amara Osei</option>
+            </select>
+          </div>
+          <div class="f-group"><label>Service *</label>
+            <select id="service">
+              <option value="">— Choose a Service —</option>
+              <option>Cut & Style — from £45</option>
+              <option>Colour & Highlights — from £85</option>
+              <option>Balayage & Ombré — from £110</option>
+              <option>Blow-Dry & Finish — from £30</option>
+              <option>Keratin Treatment — from £120</option>
+              <option>Bridal & Occasion — from £75</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-group"><label>Preferred Date *</label><input type="date" id="date"></div>
+          <div class="f-group"><label>Preferred Time *</label>
+            <select id="appt-time">
+              <option value="">— Select a Time —</option>
+              <option>9:00 AM</option><option>9:30 AM</option><option>10:00 AM</option><option>10:30 AM</option>
+              <option>11:00 AM</option><option>11:30 AM</option><option>12:00 PM</option><option>12:30 PM</option>
+              <option>1:00 PM</option><option>1:30 PM</option><option>2:00 PM</option><option>2:30 PM</option>
+              <option>3:00 PM</option><option>3:30 PM</option><option>4:00 PM</option><option>4:30 PM</option>
+              <option>5:00 PM</option><option>5:30 PM</option><option>6:00 PM</option><option>6:30 PM</option>
+              <option>7:00 PM</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-group span2"><label>Additional Notes</label><textarea id="notes" placeholder="Tell us about your hair, inspiration, or any questions for your stylist..."></textarea></div>
+        </div>
+        <button class="f-submit" onclick="submitAppt()">Confirm Appointment Request →</button>
+      </div>
+    </div>
+    <div id="appt-success">
+      <div class="success-icon">🌸</div>
+      <h3>We Can't Wait to See You!</h3>
+      <p id="success-msg">Your appointment request has been received. We'll be in touch shortly to confirm your booking.</p>
+      <button class="btn-ghost" onclick="resetAppt()" style="margin-top:8px">Make Another Booking</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-brand-name">Barnatos</div>
+      <div class="footer-brand-tag">Hairdressers · Est. 2005</div>
+      <p class="footer-brand-desc" contenteditable="false">A luxury hair salon dedicated to the art of beautiful hair. Precision, passion, and personalised care — every single visit.</p>
+    </div>
+    <div class="footer-col"><h4>Navigate</h4><ul><li><a href="#about">About Us</a></li><li><a href="#services">Services</a></li><li><a href="#team">Our Stylists</a></li><li><a href="#reviews">Reviews</a></li><li><a href="#info">Contact</a></li></ul></div>
+    <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Cut & Style</a></li><li><a href="#services">Colour</a></li><li><a href="#services">Balayage</a></li><li><a href="#services">Keratin</a></li><li><a href="#services">Bridal</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><ul><li><a href="#">14 Blossom Lane, London</a></li><li><a href="#">+44 (0)20 7123 4567</a></li><li><a href="#">hello@barnatos.co.uk</a></li><li><a href="#">@barnatos_hair</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Barnatos Hairdressers. All rights reserved.</span>
+    <span>Crafted with care · London</span>
+  </div>
+</footer>
+
+<script>
+  // NAV scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // Min date
+  document.getElementById('date').min = new Date().toISOString().split('T')[0];
+
+  // ── PASSWORD PROTECTION ──
+  const CORRECT_PASSWORD = 'JoshuaP2007.';
+  let editMode = false;
+
+  function openPwModal() {
+    if (editMode) { exitEdit(); return; }
+    document.getElementById('pw-overlay').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').style.display = 'none';
+    setTimeout(() => document.getElementById('pw-input').focus(), 100);
+  }
+
+  function closePwModal() {
+    document.getElementById('pw-overlay').classList.remove('show');
+  }
+
+  function checkPw() {
+    const val = document.getElementById('pw-input').value;
+    if (val === CORRECT_PASSWORD) {
+      closePwModal();
+      enableEdit();
+    } else {
+      document.getElementById('pw-error').style.display = 'block';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+
+  function enableEdit() {
+    editMode = true;
+    document.getElementById('edit-banner').classList.add('visible');
+    const fab = document.getElementById('edit-fab');
+    fab.textContent = '✓';
+    fab.classList.add('active');
+    fab.title = 'Exit Edit Mode';
+    document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = 'true');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function exitEdit() {
+    editMode = false;
+    document.getElementById('edit-banner').classList.remove('visible');
+    const fab = document.getElementById('edit-fab');
+    fab.textContent = '✏️';
+    fab.classList.remove('active');
+    fab.title = 'Edit Website';
+    document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = 'false');
+  }
+
+  // Click outside modal to close
+  document.getElementById('pw-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closePwModal();
+  });
+
+  // ── APPOINTMENT ──
+  function submitAppt() {
+    const fname   = document.getElementById('fname').value.trim();
+    const lname   = document.getElementById('lname').value.trim();
+    const service = document.getElementById('service').value;
+    const date    = document.getElementById('date').value;
+    const time    = document.getElementById('appt-time').value;
+    const stylist = document.getElementById('stylist').value;
+    if (!fname || !lname) { showErr('Please enter your full name.'); return; }
+    if (!service)          { showErr('Please select a service.'); return; }
+    if (!date)             { showErr('Please choose a preferred date.'); return; }
+    if (!time)             { showErr('Please choose a preferred time.'); return; }
+    const who = stylist ? ` with ${stylist}` : '';
+    document.getElementById('success-msg').textContent =
+      `Thank you, ${fname}! We've received your request for ${service} on ${fmtDate(date)} at ${time}${who}. We'll confirm within 24 hours — we look forward to welcoming you to Barnatos.`;
+    document.getElementById('appt-form-wrap').style.display = 'none';
+    document.getElementById('appt-success').style.display = 'block';
+    document.getElementById('appt-success').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function resetAppt() {
+    document.getElementById('appt-form-wrap').style.display = 'block';
+    document.getElementById('appt-success').style.display = 'none';
+    ['fname','lname','phone','email','notes'].forEach(id => document.getElementById(id).value = '');
+    ['stylist','service','appt-time'].forEach(id => document.getElementById(id).selectedIndex = 0);
+    document.getElementById('date').value = '';
+  }
+
+  function showErr(msg) {
+    document.getElementById('form-err')?.remove();
+    const el = document.createElement('div');
+    el.id = 'form-err';
+    el.style.cssText = 'background:rgba(196,135,122,.12);border:1px solid rgba(196,135,122,.4);color:var(--rose);padding:12px 18px;font-size:13px;letter-spacing:1px;margin-bottom:16px;text-align:center;';
+    el.textContent = msg;
+    document.querySelector('.f-submit').before(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  function fmtDate(s) {
+    const [y,m,day] = s.split('-');
+    return ['January','February','March','April','May','June','July','August','September','October','November','December'][+m-1] + ` ${+day}, ${y}`;
+  }
+</script>
+</body>
+</html>
